@@ -1,0 +1,96 @@
+README:
+======================================
+These are some scripts I use to backup my linux minecraft server and generate maps with pigmap. There is also a script to make sure the minecraft server is always running
+
+Global configuration is stored in the file common.sh Any script specific configuration is stored at the top of the script
+
+The backup script is designed to create a backup every hour. It keeps 2 days worth of hourly backups, one week of daily backups, one month of weekly backups, and all monthly backups.
+
+The pigmap maps are generated 15 minutes after every our and it only renders the regions that changed. c10t runs once a day at 15 past midnight. The c10t map generation is currently disabled because c10t does not currently cache renderings for the region world format and causes my server to lag (a large chunk of CPU is used for hardware IO). The map scripts also generate a json file with the signs in it. This is a modified python script from minecraft overviewer. This script can be found at https://github.com/billyburly/find-signs
+
+Backups and map generation is run at a lower priority.
+
+These scripts assume that you have a minecraft user and all the minecraft files are in a minecraft folder in its home diretory (/home/minecraft/minecraft). It also assumes that you have a dual core CPU and runs multithreaded applications with 2 threads.
+
+The scripts run minecraft in a screen in the background. Thus you can log out and it will stay running. One of the scripts will check if the server is running and starts it if it is not. I have it set to run every 5 minutes. If you want to access the minecraft console you can use the command 'screen -S minecraft -p world -r', you can use 'screen -r' if you only have one screen session running. To close the screen and leave minecraft running press CTRL-A CTRL-D.
+
+You should probably have some linux experiance to use these scripts. I don't cover things like getting/building minecraft, bukkit, pigmap, c10t in this document. My instructions may be a little off. But, I should have information to get you up and running.
+
+Thanks:
+======================================
+ratty - my scripts are loosly based on his linux admin scripts
+Guy who I copied screen usage from (sorry forgot your name/handle)
+
+Scripts:
+======================================
+backup.sh - generates backups
+check.sh - checks that minecraft is running, restarts if necessary
+common.sh - common configuration variables
+make-c10t.sh - generate c10t maps for isometeric, night isometric, and overhead views
+make-map.sh - generate maps
+make-pigmap.sh - generate pigmap map
+num-users.py - prints number of users, needs mapmarkers json plugin, used for snmp monitoring
+run_minecraft.sh - runs minecraft and bukkit
+start.sh - starts minecraft in a screen using run_minecraft.sh 
+
+
+My directory structure:
+======================================
+minecraft - minecraft files
+  apps - external applications like pigmap
+  backup - where backups are stored
+    daily
+    hourly
+    monthly
+    temp - temporary files, used during backup creation
+    weekly
+  logs - log files
+  plugins - plugin folder
+  scripts - location of these script files
+  map
+    cache - cache for map generation
+      carto - c10t cache files
+    carto - c10t maps
+      iso
+      iso-night
+      over
+    html - pigmap html files
+    img - pigmap image files
+    pigmap - pigmap output
+    world - copy of world for image generation
+  world - minecraft world files
+
+
+Setup:
+======================================
+1. Create directories for maps and backups in your minecraft directory. (I keep all my minecraft stuff in a minecraft folder in the minecraft users home directory)
+   cd minecraft
+   mkdir apps
+   mkdir -p backup/{daily,hourly,monthly,temp,weekly}
+   mkdir logs
+   mkdir -p map/{cache,carto,html,img,pigmap,world}
+   mkdir map/cache/carto
+   mkdir map/carto/{iso,iso-night,over}
+2. Compile pigmap and c10t in the apps folder. Place pigmap html & image files in their respective folders in the map directory
+3. Put find-signs scripts in apps folder
+   cd apps 
+   git clone git://github.com/billyburly/find-signs.git
+   mv find-signs findsigns
+   cd ..
+4. Get scripts
+   git clone git://github.com/billyburly/mc-server-scripts.git
+   mv mc-server-scripts scripts
+5. If you are keeping anything in a different location, edit the config script, common.sh, and any configs found at the top of the scripts. Comment out unwanted features. The map generation script adds a time stamp to the pigmap output. You either want to edit the pigmap html template to support this, or comment this section out.
+6. Edit crontab
+   crontab -e
+   Add these lines:
+   0 * * * * /home/minecraft/minecraft/scripts/backup.sh
+   15 * * * * /home/minecraft/minecraft/scripts/make-map.sh
+   */5 * * * * /home/minecraft/minecraft/scripts/check.sh
+7. Stop minecraft if its running, then start it using start.sh
+8. If you want, configuere snmpd to have a variable for the number of users currently in the minecraft server. (I use emacs, you can use your preferred text editor)
+   sudo emacs /etc/snmp/snmpd.conf
+   Add the following line and save:
+   extend minecraft-users /home/minecraft/minecraft/scripts/num-users.py
+9. Restat snmpd
+   sudo service snmpd restart
