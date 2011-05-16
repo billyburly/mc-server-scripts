@@ -83,7 +83,7 @@ Setup:
    mv mc-server-scripts scripts
 5. If you are keeping anything in a different location, edit the config script, common.sh, and any configs found at the top of the scripts. Comment out unwanted features. The map generation script adds a time stamp to the pigmap output. You either want to edit the pigmap html template to support this, or comment this section out.
 6. Generate ssh keys for uploading backups to remote locations. When asked for a passphrase, just press enter to use no password. There are tutorials on the internet on how to use an ssh key with a password if you want to use it.
-   ssh-keygen -t rsa -C "youremail@domain.com" -f backup/key/id_rsa
+   ssh-keygen -t rsa -f backup/key/id_rsa
 7. Copy backup/key/id_rsa.pub to the authorized_keys file on the host you will be uploading the backups to.
 8. Edit crontab
    crontab -e
