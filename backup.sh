@@ -5,6 +5,10 @@ DIR=`dirname $0`
 
 BACKUP=$MCDIR/backup
 TEMP=$BACKUP/temp
+BACKUP_USER=username
+BACKUP_KEY=$BACKUP/key/id_rsa
+BACKUP_HOST=hostname
+BACKUP_DIR=directory
 
 PWD=`pwd`
 
@@ -69,6 +73,12 @@ if [ `date +%k` == 0 ] ; then
   if [ `date +%w` == 0 ] ; then
     find $BACKUP/weekly -type f -mtime +45 -exec rm -f '{}' \;
   fi
+fi
+
+#copy backups to remote location
+if [ `date +%k` == 0 ] ; then
+  echo `date +"%F %H:%M:%S"` Copying Backups to Remote Location via rsync
+  rsync -e "ssh -i $BACKUP_KEY" -a $BACKUP/{daily,monthly,weekly} $BACKUP_USER@$BACKUP_HOST:$BACKUP_DIR
 fi
 
 echo `date +"%F %H:%M:%S"` Done

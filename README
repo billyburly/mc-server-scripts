@@ -41,6 +41,7 @@ minecraft - minecraft files
   backup - where backups are stored
     daily
     hourly
+    key - location of ssh keys for offsite backup
     monthly
     temp - temporary files, used during backup creation
     weekly
@@ -66,7 +67,7 @@ Setup:
 1. Create directories for maps and backups in your minecraft directory. (I keep all my minecraft stuff in a minecraft folder in the minecraft users home directory)
    cd minecraft
    mkdir apps
-   mkdir -p backup/{daily,hourly,monthly,temp,weekly}
+   mkdir -p backup/{daily,hourly,key,monthly,temp,weekly}
    mkdir logs
    mkdir -p map/{cache,carto,html,img,pigmap,world}
    mkdir map/cache/carto
@@ -81,16 +82,25 @@ Setup:
    git clone git://github.com/billyburly/mc-server-scripts.git
    mv mc-server-scripts scripts
 5. If you are keeping anything in a different location, edit the config script, common.sh, and any configs found at the top of the scripts. Comment out unwanted features. The map generation script adds a time stamp to the pigmap output. You either want to edit the pigmap html template to support this, or comment this section out.
-6. Edit crontab
+6. Generate ssh keys for uploading backups to remote locations. When asked for a passphrase, just press enter to use no password. There are tutorials on the internet on how to use an ssh key with a password if you want to use it.
+   ssh-keygen -t rsa -C "youremail@domain.com" -f backup/key/id_rsa
+7. Copy backup/key/id_rsa.pub to the authorized_keys file on the host you will be uploading the backups to.
+8. Edit crontab
    crontab -e
    Add these lines:
    0 * * * * /home/minecraft/minecraft/scripts/backup.sh
    15 * * * * /home/minecraft/minecraft/scripts/make-map.sh
    */5 * * * * /home/minecraft/minecraft/scripts/check.sh
-7. Stop minecraft if its running, then start it using start.sh
-8. If you want, configuere snmpd to have a variable for the number of users currently in the minecraft server. (I use emacs, you can use your preferred text editor)
+9. Stop minecraft if its running, then start it using start.sh
+10. If you want, configuere snmpd to have a variable for the number of users currently in the minecraft server. (I use emacs, you can use your preferred text editor)
    sudo emacs /etc/snmp/snmpd.conf
    Add the following line and save:
    extend minecraft-users /home/minecraft/minecraft/scripts/num-users.py
-9. Restat snmpd
+11. Restat snmpd
    sudo service snmpd restart
+
+
+History:
+======================================
+v0.2 - added rsyncing of backups to remote location
+v0.1 - initial version
